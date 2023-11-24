@@ -24,4 +24,4 @@ async def run(data: List[List[float]] = Body(), q: int | None = Body(1)):
     rho = calculate_similarity_matrix(data, n)
     quantum_optimizer = QuantumOptimizer(rho, n, q)
     svqe_state, svqe_level = quantum_optimizer.sampling_vqe_solution()
-    return {"result": list(svqe_state)}
+    return {"result": list(svqe_state[-2:])}
