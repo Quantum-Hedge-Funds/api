@@ -21,7 +21,9 @@ app.add_middleware(
 @app.post("/run")
 async def run(data: List[List[float]] = Body(), q: int | None = Body(1)):
     n = len(data)
+    q_fix = n-q
     rho = calculate_similarity_matrix(data, n)
-    quantum_optimizer = QuantumOptimizer(rho, n, q)
+    quantum_optimizer = QuantumOptimizer(rho, n, q_fix)
     svqe_state, svqe_level = quantum_optimizer.sampling_vqe_solution()
-    return {"result": list(svqe_state[-2:])}
+    print(svqe_state)
+    return {"result": list(svqe_state[-n:])}
