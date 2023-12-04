@@ -24,7 +24,11 @@ app.add_middleware(
 @app.post("/run")
 async def run(data: List[List[float]] = Body(), q: int | None = Body(1)):
     n = len(data)
+    if n == 0:
+        raise HTTPException(409, {"error": "alteast one asset is required"})
     q_fix = n-q
+    if q_fix < 0:
+        raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
     rho = calculate_similarity_matrix(data, n)
     quantum_optimizer = QuantumOptimizer(rho, n, q_fix)
     result = quantum_optimizer.sampling_vqe_solution()
