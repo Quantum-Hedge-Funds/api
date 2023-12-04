@@ -1,5 +1,6 @@
 import numpy as np
 import fastdtw
+from qiskit.circuit.library import TwoLocal
 
 def calculate_similarity_matrix(data, n):
     rho = np.zeros((n, n))
@@ -11,3 +12,7 @@ def calculate_similarity_matrix(data, n):
             rho[i_i, j_j] = this_rho
             rho[j_j, i_i] = this_rho
     return rho
+
+def quantum_circuit(n):
+    ry = TwoLocal(n, "ry", "cz", reps=5, entanglement="full")
+    return ry.decompose()
