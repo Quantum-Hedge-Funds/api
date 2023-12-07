@@ -26,7 +26,8 @@ class QuantumOptimizer:
         exact_mes = NumPyMinimumEigensolver()
         exact_eigensolver = MinimumEigenOptimizer(exact_mes)
         result = exact_eigensolver.solve(self.qp)
-        return self.decode_result(result)
+        bool_result = True if str(result.status) == "OptimizationResultStatus.SUCCESS" else False
+        return self.get_proportions(result), bool_result
 
     def sampling_vqe_solution(self):
         def callback(evaluation_count, optimizer_parameters, estimated_value, metadata):
@@ -40,7 +41,8 @@ class QuantumOptimizer:
         result = svqe.solve(self.qp)
         print("Result")
         print(result)
-        return self.get_proportions(result)
+        bool_result = True if str(result.status) == "OptimizationResultStatus.SUCCESS" else False
+        return self.get_proportions(result), bool_result
 
     def circuit(self):
         ry = TwoLocal(self.n, "ry", "cz", reps=5, entanglement="full")
@@ -82,12 +84,19 @@ class QuantumOptimizer:
                     proportions[j] += v
             value = self.pdf.to_quadratic_program().objective.evaluate(x)
             print("%10s\t%.4f\t\t%.4f" % (x, value, v))
-        return self.get_norm_proportions(proportions)
+        return self.get_norm_proportions(proportions, selection)
 
-    def get_norm_proportions(self, proportions):
-        print("Proportions", proportions)
-        norm_proportions = []
-        sum_proportions = sum(proportions[-self.n:])
-        for y in proportions[-self.n:]:
-            norm_proportions.append(y/sum_proportions)
+    def get_norm_proportions(self, proportions, selection):
+        selection_proportions = []
+        for i in range(len(proportions[-self.n:])):
+            index = self.n**2 + i
+            proportion = proportions[index]
+            binary_value = selection[index]
+            if binary_value == 1:
+                selection_proportions.append(proportion)
+            else:
+                selection_proportions.append(0)
+        if sum(selection_proportions) == 0:
+            return [0 for _ in range(len(selection_proportions))]
+        norm_proportions = [x / sum(selection_proportions) for x in selection_proportions]
         return norm_proportions

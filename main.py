@@ -22,18 +22,20 @@ app.add_middleware(
 )
 
 @app.post("/run")
-async def run(data: List[List[float]] = Body(), q: int | None = Body(1)):
+async def run(data: List[List[float]] = Body(), q: int | None = Body(1), algorithm: str | None = Body('classical')):
     n = len(data)
     if n == 0:
-        raise HTTPException(409, {"error": "alteast one asset is required"})
-    q_fix = n-q
-    if q_fix < 0:
+        raise HTTPException(409, {"error": "at least one asset is required"})
+    if q < 0:
         raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
     rho = calculate_similarity_matrix(data, n)
-    quantum_optimizer = QuantumOptimizer(rho, n, q_fix)
-    result = quantum_optimizer.sampling_vqe_solution()
+    quantum_optimizer = QuantumOptimizer(rho, n, q)
+    if algorithm == 'quantum':
+        result, status = quantum_optimizer.sampling_vqe_solution()
+    else: 
+        result, status = quantum_optimizer.exact_solution()
     values = quantum_optimizer.values
-    return {"result": result, "values": values}
+    return {"result": result, "status": status, "values": values}
 
 @app.post("/draw")
 async def draw(n: int | None = Body(2), q: int | None = Body(1)):
