@@ -54,14 +54,18 @@ async def draw(n: int | None = Body(2), q: int | None = Body(1)):
 @app.post("/plot")
 async def plot(values: List[float] = Body(), q: int | None = Body(1)):
     try:
+        plt.close()
         x = [i for i in range(len(values))]
         plot = plt.plot(x,values)
+        plt.xlabel('Iterations')
+        plt.ylabel('Optimisation value')
         buffer = BytesIO()
         plt.savefig(buffer, format="png")
         buffer.seek(0)
         return StreamingResponse(buffer, media_type="image/png")
     except:
       raise HTTPException(400, "Error")
+    plt.close()
     
 total_jobs = 0
 
