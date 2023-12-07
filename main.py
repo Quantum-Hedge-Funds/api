@@ -3,14 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from quantum_optimizer import QuantumOptimizer
 from utils import calculate_similarity_matrix, quantum_circuit
 from typing import List
-<<<<<<< HEAD
 from io import BytesIO
 from fastapi.responses import StreamingResponse
 import matplotlib.pyplot as plt
-=======
 import requests
 import random
->>>>>>> 1efbf992440e115d26b45a1491fe17614460bf68
 
 app = FastAPI()
 
