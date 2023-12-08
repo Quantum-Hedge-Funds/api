@@ -139,12 +139,12 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorit
                     "frequency": frequency * (int(random.random() * 10000)),
                 })
 
-        totalFrequency = sum([asset.get("frequency") for asset in output])
-
-        for i in range(len(output)):
-            output[i]["weight"] = int(10000 * output[i].get("frequency") / totalFrequency)
-
         job_id = f"job_id-{total_jobs}"
+
+    totalFrequency = sum([asset.get("frequency") for asset in output])
+
+    for i in range(len(output)):
+        output[i]["weight"] = int(10000 * output[i].get("frequency") / totalFrequency)
         
     results[job_id] = output
     
