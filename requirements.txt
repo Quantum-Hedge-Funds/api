@@ -5,7 +5,7 @@ beautifulsoup4==4.12.2
 certifi==2023.11.17
 charset-normalizer==3.3.2
 click==8.1.7
-contourpy==1.2.0
+#contourpy==1.2.0
 cycler==0.12.1
 dill==0.3.7
 docplex==2.25.236
