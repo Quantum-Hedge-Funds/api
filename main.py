@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Body, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.quantum_optimizer import QuantumOptimizer
-from app.utils import calculate_similarity_matrix, quantum_circuit
+from quantum_optimizer import QuantumOptimizer
+from utils import calculate_similarity_matrix, quantum_circuit
 from typing import List
 from io import BytesIO
 from fastapi.responses import StreamingResponse
