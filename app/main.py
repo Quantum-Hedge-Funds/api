@@ -146,7 +146,6 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorit
 
         job_id = f"job_id-{total_jobs}"
         
-
     results[job_id] = output
     
     return job_id
