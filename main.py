@@ -62,17 +62,27 @@ async def plot(values: List[float] = Body(), q: int | None = Body(1)):
         buffer = BytesIO()
         plt.savefig(buffer, format="png")
         buffer.seek(0)
+        plt.close()
         return StreamingResponse(buffer, media_type="image/png")
     except:
       raise HTTPException(400, "Error")
-    plt.close()
     
 total_jobs = 0
-
 results = {}
 
+def get_frequencies(data, n, q, algorithm):
+    rho = calculate_similarity_matrix(data, n)
+    quantum_optimizer = QuantumOptimizer(rho, n, q)
+    if algorithm == 'quantum':
+        result, status = quantum_optimizer.sampling_vqe_solution()
+    else: 
+        result, status = quantum_optimizer.exact_solution()
+    values = quantum_optimizer.values
+    return {"result": result, "status": status, "values": values}
+
+
 @app.post("/diversify")
-async def diversify(hashes: List[str] = Body(), q: int | None = Body(1)):
+async def diversify(hashes: List[str] = Body(), q: int | None = Body(1), algorithm: str | None = Body('classical')):
     data = []
     for hash in hashes:
         try:
@@ -82,27 +92,46 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(1)):
             raise HTTPException(400, {"error": "invalid hash"})
 
     n = len(data)
+
+    print("n", n)
+
     if n == 0:
         raise HTTPException(409, {"error": "alteast one asset is required"})
-    q_fix = n-q
-    if q_fix < 0:
+    if q < 0:
         raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
     
-
     output = []
+
+    status = False
+    max_tries = 10
+    tries = 0
+
+    prices = []
+    for i in range(len(data)):
+        asset = data[i]
+        asset_prices = asset.get("prices")
+        asset_prices_array = [asset_prices[j].get("value") for j in range(len(asset_prices))]
+        prices.append(asset_prices_array)
+
+    while not status and tries <= max_tries:
+        frequencies = get_frequencies(prices, n, q, algorithm)
+        status = frequencies.get("status")
+        tries += 1
+
+    print("frequencies", frequencies)
     
     for i in range(len(data)):
         asset = data[i]
         
         output.append({
             "id": asset.get("id"),
-            "frequecy": int(random.random() * 10000),
+            "frequency": frequencies.get("result")[i] * (int(random.random() * 10000)),
         })
 
-    totalFrequency = sum([asset.get("frequecy") for asset in output])
+    totalFrequency = sum([asset.get("frequency") for asset in output])
 
     for i in range(len(output)):
-        output[i]["weight"] = int(10000 * output[i].get("frequecy") / totalFrequency)
+        output[i]["weight"] = int(10000 * output[i].get("frequency") / totalFrequency)
 
     job_id = f"job_id-{total_jobs}"
     
@@ -111,7 +140,8 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(1)):
     return job_id
 
 @app.post("/get-diversification-result")
-async def get_diversification_results(job_id: str = Body()):
+async def get_diversification_results(job_id: str = Body(), q: int | None = Body(1)):
+    print("results", results)
     result = results.get(job_id, None)
     
     if result == None:
