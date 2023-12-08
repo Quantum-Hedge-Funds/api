@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Body, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from api.quantum_optimizer import QuantumOptimizer
-from api.utils import calculate_similarity_matrix, quantum_circuit
+from app.quantum_optimizer import QuantumOptimizer
+from app.utils import calculate_similarity_matrix, quantum_circuit
 from typing import List
 from io import BytesIO
 from fastapi.responses import StreamingResponse
@@ -82,59 +82,71 @@ def get_frequencies(data, n, q, algorithm):
 
 
 @app.post("/diversify")
-async def diversify(hashes: List[str] = Body(), q: int | None = Body(1), algorithm: str | None = Body('classical')):
-    data = []
+async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorithm: str | None = Body('classical')):
+    batch_data = []
+    q_input = False if q == 0 else True
+    
     for hash in hashes:
         try:
             res = requests.get(f"https://gateway.pinata.cloud/ipfs/{hash}")
-            data += res.json()
+            batch_data.append(res.json())
         except:
             raise HTTPException(400, {"error": "invalid hash"})
-
-    n = len(data)
-
-    print("n", n)
-
-    if n == 0:
-        raise HTTPException(409, {"error": "alteast one asset is required"})
-    if q < 0:
-        raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
-    
-    output = []
-
-    status = False
-    max_tries = 10
-    tries = 0
-
-    prices = []
-    for i in range(len(data)):
-        asset = data[i]
-        asset_prices = asset.get("prices")
-        asset_prices_array = [asset_prices[j].get("value") for j in range(len(asset_prices))]
-        prices.append(asset_prices_array)
-
-    while not status and tries <= max_tries:
-        frequencies = get_frequencies(prices, n, q, algorithm)
-        status = frequencies.get("status")
-        tries += 1
-
-    print("frequencies", frequencies)
-    
-    for i in range(len(data)):
-        asset = data[i]
         
-        output.append({
-            "id": asset.get("id"),
-            "frequency": frequencies.get("result")[i] * (int(random.random() * 10000)),
-        })
+    output = []
+        
+    for data_index in range(len(batch_data)):
+        data = batch_data[data_index]
+        n = len(data)
 
-    totalFrequency = sum([asset.get("frequency") for asset in output])
+        if not q_input:
+            q = int(n / 2) + (n % 2 > 0)
 
-    for i in range(len(output)):
-        output[i]["weight"] = int(10000 * output[i].get("frequency") / totalFrequency)
+        print("n", n)
+        print("q", q)
 
-    job_id = f"job_id-{total_jobs}"
-    
+        if n == 0:
+            raise HTTPException(409, {"error": "alteast one asset is required"})
+        if q < 0:
+            raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
+
+        status = False
+        max_tries = 10
+        tries = 0
+
+        prices = []
+        for i in range(len(data)):
+            asset = data[i]
+            asset_prices = asset.get("prices")
+            asset_prices_array = [asset_prices[j].get("value") for j in range(len(asset_prices))]
+            prices.append(asset_prices_array)
+
+        while not status and tries <= max_tries:
+            frequencies = get_frequencies(prices, n, q, algorithm)
+            status = frequencies.get("status")
+            tries += 1
+
+        print("frequencies", frequencies)
+        
+        for i in range(len(data)):
+            asset = data[i]
+            frequency = frequencies.get("result")[i]
+
+            if frequency != 0:
+            
+                output.append({
+                    "id": asset.get("id"),
+                    "frequency": frequency * (int(random.random() * 10000)),
+                })
+
+        totalFrequency = sum([asset.get("frequency") for asset in output])
+
+        for i in range(len(output)):
+            output[i]["weight"] = int(10000 * output[i].get("frequency") / totalFrequency)
+
+        job_id = f"job_id-{total_jobs}"
+        
+
     results[job_id] = output
     
     return job_id
