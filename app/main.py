@@ -24,7 +24,7 @@ app.add_middleware(
 )
 
 @app.post("/run")
-async def run(data: List[List[float]] = Body(), q: int | None = Body(1), algorithm: str | None = Body('classical')):
+async def run(data: List[List[float]] = Body(), q: int | None = Body(1), algorithm: str | None = Body('quantum_inspired')):
     n = len(data)
     if n == 0:
         raise HTTPException(409, {"error": "at least one asset is required"})
@@ -82,7 +82,7 @@ def get_frequencies(data, n, q, algorithm):
 
 
 @app.post("/diversify")
-async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorithm: str | None = Body('classical')):
+async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorithm: str | None = Body('quantum_inspired')):
     batch_data = []
     q_input = False if q == 0 else True
     
@@ -106,7 +106,7 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorit
         print("q", q)
 
         if n == 0:
-            raise HTTPException(409, {"error": "alteast one asset is required"})
+            raise HTTPException(409, {"error": "al teast one asset is required"})
         if q < 0:
             raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
 
