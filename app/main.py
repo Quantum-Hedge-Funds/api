@@ -142,16 +142,20 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorit
         job_id = f"job_id-{total_jobs}"
 
     totalFrequency = sum([asset.get("frequency") for asset in output])
+    total_weight = 0
 
     for i in range(len(output)):
         output[i]["weight"] = int(10000 * output[i].get("frequency") / totalFrequency)
+        total_weight += output[i].get("weight", 0)
         
+    output[-1]["weight"] += 10000 - total_weight
+
     results[job_id] = output
     
     return job_id
 
 @app.post("/get-diversification-result")
-async def get_diversification_results(job_id: str = Body(), q: int | None = Body(1)):
+async def get_diversification_results(job_id: str = Body()):
     print("results", results)
     result = results.get(job_id, None)
     
