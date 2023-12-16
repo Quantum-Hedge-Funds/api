@@ -40,6 +40,7 @@ results = {}
 
 @app.post("/diversify")
 async def diversify(hashes: List[str] = Body(), q: int | None = Body(1)):
+    print(hashes)
     data = []
     for hash in hashes:
         try:
@@ -53,9 +54,8 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(1)):
         raise HTTPException(409, {"error": "alteast one asset is required"})
     q_fix = n-q
     if q_fix < 0:
-        raise HTTPException(400, {"error": "the required number of assets must be smaller than the total number of assets"})
+        raise HTTPException(409, {"error": "the required number of assets must be smaller than the total number of assets"})
     
-
     output = []
     
     for i in range(len(data)):
@@ -68,8 +68,13 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(1)):
 
     totalFrequency = sum([asset.get("frequecy") for asset in output])
 
+    total_weight = 0
+
     for i in range(len(output)):
         output[i]["weight"] = int(10000 * output[i].get("frequecy") / totalFrequency)
+        total_weight += output[i].get("weight", 0)
+
+    output[-1]["weight"] += 10000 - total_weight
 
     job_id = f"job_id-{total_jobs}"
     
