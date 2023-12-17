@@ -118,8 +118,8 @@ async def diversify(hashes: List[str] = Body(), q: int | None = Body(0), algorit
         for i in range(len(data)):
             asset = data[i]
             asset_prices = asset.get("prices")
-            asset_prices_array = [asset_prices[j].get("value") for j in range(len(asset_prices))]
-            prices.append(asset_prices_array)
+            # asset_prices_array = [asset_prices[j].get("value") for j in range(len(asset_prices))]
+            prices.append(asset_prices)
 
         while not status and tries <= max_tries:
             frequencies = get_frequencies(prices, n, q, algorithm)
