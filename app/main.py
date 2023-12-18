@@ -172,7 +172,7 @@ async def get_diversification_results(job_id: str = Body()):
     return result
 
 class Asset(pydantic.BaseModel):
-    id: str
+    id: int
     symbol: str
     prices: list[float]
     
