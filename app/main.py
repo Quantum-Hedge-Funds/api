@@ -8,6 +8,13 @@ from fastapi.responses import StreamingResponse
 import matplotlib.pyplot as plt
 import requests
 import random
+import pydantic
+import dotenv
+import os
+import json 
+from fastapi.encoders import jsonable_encoder
+
+dotenv.load_dotenv()
 
 app = FastAPI()
 
@@ -163,3 +170,37 @@ async def get_diversification_results(job_id: str = Body()):
         raise HTTPException(404, {"error": "job not found"})
     
     return result
+
+class Asset(pydantic.BaseModel):
+    id: str
+    symbol: str
+    price: list[float]
+    
+    def __json__(self):
+        return {
+            "id": self.id,
+            "symbol": self.symbol,
+            "price": self.price
+        }
+    
+@app.post("/upload-json-to-ipfs")
+async def upload_json_to_ipfs(data: list[Asset] = Body()):
+    print(os.getenv('PINATA_API_KEY'))
+    try:
+        res = requests.post(
+            "https://api.pinata.cloud/pinning/pinJSONToIPFS", 
+            json ={
+                "pinataContent": jsonable_encoder(data),
+                "pinataOptions": { "cidVersion": 1 },
+                "pinataMetadata": { "name": "data.json" }
+            }, 
+            headers={
+                "accept": "application/json",
+                "content-type": "application/json",
+                "authorization": f"Bearer {os.getenv('PINATA_API_KEY')}"
+            }
+        )
+        return res.json()["IpfsHash"]
+    except Exception as e:
+        print(e)
+        raise HTTPException(400, {"error": "invalid data"})
