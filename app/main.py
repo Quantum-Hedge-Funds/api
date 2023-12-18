@@ -174,14 +174,7 @@ async def get_diversification_results(job_id: str = Body()):
 class Asset(pydantic.BaseModel):
     id: str
     symbol: str
-    price: list[float]
-    
-    def __json__(self):
-        return {
-            "id": self.id,
-            "symbol": self.symbol,
-            "price": self.price
-        }
+    prices: list[float]
     
 @app.post("/upload-json-to-ipfs")
 async def upload_json_to_ipfs(data: list[Asset] = Body()):
